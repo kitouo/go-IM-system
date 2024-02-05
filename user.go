@@ -15,12 +15,12 @@ type User struct {
 
 //创建用户
 func NewUser(connection net.Conn) *User {
-	userAddress := conn.RemoteAddr().String()
+	userAddress := connection.RemoteAddr().String()
 	user := &User {
 		Name : userAddress,
 		Address : userAddress,
 		Channel : make(chan string),
-		Connection : connection
+		Connection : connection,
 	}
 
 	// 启动监听当前用户channel消息的goroutine
@@ -35,6 +35,6 @@ func NewUser(connection net.Conn) *User {
 func (user *User) ListenMessage() {
 	for {
 		msg := <- user.Channel
-		user.connection.Write([]byte(msg + "\n"))
+		user.Connection.Write([]byte(msg + "\n"))
 	}
 }
