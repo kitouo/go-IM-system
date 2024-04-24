@@ -1,40 +1,37 @@
-package main
+package domian
 
 import (
 	"net"
 )
 
 type User struct {
-	Name string
-	Address string
-	Channel chan string
+	Name       string
+	Address    string
+	Channel    chan string
 	Connection net.Conn
-
 }
 
-
-//创建用户
+// 创建用户
 func NewUser(connection net.Conn) *User {
 	userAddress := connection.RemoteAddr().String()
-	user := &User {
-		Name : userAddress,
-		Address : userAddress,
-		Channel : make(chan string),
-		Connection : connection,
+	user := &User{
+		Name:       userAddress,
+		Address:    userAddress,
+		Channel:    make(chan string),
+		Connection: connection,
 	}
 
 	// 启动监听当前用户channel消息的goroutine
 	go user.ListenMessage()
 
 	return user
-	 
 
 }
 
 // 监听当前用户channel 一旦有消息立即发送给客户端
 func (user *User) ListenMessage() {
 	for {
-		msg := <- user.Channel
+		msg := <-user.Channel
 		user.Connection.Write([]byte(msg + "\n"))
 	}
 }

@@ -1,7 +1,10 @@
 package main
 
+import (
+	"go-IM-system-master/domian"
+)
 
 func main() {
-	server := NewServer("127.0.0.1", 8888)
+	server := domian.NewServer("127.0.0.1", 8080)
 	server.Start()
 }
