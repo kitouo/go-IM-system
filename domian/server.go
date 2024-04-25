@@ -2,6 +2,7 @@ package domian
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -53,15 +54,34 @@ func (server *Server) Handler(conn net.Conn) {
 	// 当前连接的业务
 	// fmt.Println("连接建立成功")
 
-	user := NewUser(conn)
+	user := NewUser(conn, server)
 
-	// 用户上线 将用户添加到onlineMap中
-	server.mapLock.Lock()
-	server.OnlineMap[user.Name] = user
-	server.mapLock.Unlock()
+	user.Online()
 
-	// 广播当前用户上线消息
-	server.BroadCast(user, "已上线")
+	// 接收客户端发送的消息
+	go func() {
+		buffer := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buffer)
+
+			if n == 0 {
+				user.OffLine()
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("connetion read error: ", err)
+				return
+			}
+
+			// 提取用户的消息 (去除'/n')
+			msg := string(buffer[:n-1])
+
+			// 将得到的消息进行广播
+			user.doMessage(msg)
+
+		}
+	}()
 
 	// 当前handler阻塞
 	select {}
