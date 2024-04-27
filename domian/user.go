@@ -2,6 +2,7 @@ package domian
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -56,7 +57,7 @@ func (user *User) OffLine() {
 }
 
 // 给当前用户对应的客户端发送消息
-func (user *User) sendMsg(msg string) {
+func (user *User) SendMsg(msg string) {
 	user.connection.Write([]byte(msg))
 }
 
@@ -68,9 +69,28 @@ func (currentUser *User) doMessage(msg string) {
 		currentUser.server.mapLock.Lock()
 		for _, user := range currentUser.server.OnlineMap {
 			onlineMsg := "[" + user.Address + "]" + user.Name + ":" + "在线"
-			currentUser.sendMsg(onlineMsg)
+			currentUser.SendMsg(onlineMsg)
 		}
 		currentUser.server.mapLock.Unlock()
+
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		// 消息格式 rename|张三
+		newName := strings.Split(msg, "|")[1]
+
+		// 判断用户名是否存在
+		_, isExist := currentUser.server.OnlineMap[newName]
+		if isExist {
+			currentUser.SendMsg("当前用户名已被使用\n")
+		} else {
+			currentUser.server.mapLock.Lock()
+			delete(currentUser.server.OnlineMap, currentUser.Name)
+			currentUser.server.OnlineMap[newName] = currentUser
+			currentUser.server.mapLock.Unlock()
+
+			currentUser.Name = newName
+			currentUser.SendMsg("您已更新用户名:" + currentUser.Name + "\n")
+
+		}
 
 	} else {
 		currentUser.server.BroadCast(currentUser, msg)
