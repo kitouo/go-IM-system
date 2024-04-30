@@ -1,4 +1,4 @@
-package domian
+package entity
 
 import (
 	"net"
@@ -91,6 +91,31 @@ func (currentUser *User) doMessage(msg string) {
 			currentUser.SendMsg("您已更新用户名:" + currentUser.Name + "\n")
 
 		}
+
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+
+		// 获取对方的用户名
+		remoteName := strings.Split(msg, "|")[1]
+
+		if remoteName == "" {
+			currentUser.SendMsg("消息格式不正确 请使用 \"to|name|message\"格式\n")
+			return
+		}
+
+		// 根据用户名 获取对方的User对象
+		remoteUser, ok := currentUser.server.OnlineMap[remoteName]
+		if !ok {
+			currentUser.SendMsg("该用户名不存在\n")
+			return
+		}
+
+		// 获取消息内容 通过对方的User对象将内容发送
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			currentUser.SendMsg("消息内容为空 请重发\n")
+			return
+		}
+		remoteUser.SendMsg(currentUser.Name + ":" + content)
 
 	} else {
 		currentUser.server.BroadCast(currentUser, msg)
